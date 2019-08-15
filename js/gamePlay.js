@@ -11,7 +11,8 @@ const gamePlay = {
         this.load.image('bg4','images/bg/bg4.png');
         this.load.image('footer',' images/bg/footer.png');
         this.load.image('rock1',' images/item-level-1-branch.png');
-        this.load.image('rock2',' images/item-level-1-rock.png');
+        this.load.image('rock2', 'images/item-level-2-smoke-sm.png');
+        this.load.image('rock3', 'images/item-level-1-branch.png');
         this.load.image('congratulation',' images/ui/txt-congratulations.png');
         this.load.image('gameOver',' images/ui/txt-game-over.png');
         this.load.image('tryAgainBtn',' images/ui/btn-try-again.png');
@@ -34,11 +35,6 @@ const gamePlay = {
         this.bg1 = this.add.tileSprite(w/2, h/2, w, h, 'bg1');
         this.footer = this.add.tileSprite(w/2, 360+45, w, 90, 'footer');
 
-        // 怪物的座標資訊
-        const masPos = [
-            {name: 'rock1', x: w + 200, y: 320, w: 160, h: 83},
-            {name: 'rock2', x: w + 200, y: h / 2 - 30 , w: 200, h: 94},
-        ];
         //把物件加入有物理的世界
         this.physics.add.existing(this.footer);
         // 設定物件不會動靜止不會掉下去
@@ -48,15 +44,7 @@ const gamePlay = {
         //設定人物位置
         this.player = this.physics.add.sprite(150, 150, 'user');
         this.player.setScale(0.7);
-        //將需要碰撞的物件綁在一起
-        this.physics.add.collider(this.player, this.footer);//玩家和地板綁在一起
 
-        const addPhysics = GameObject =>{
-            console.log("123");
-            this.physics.add.existing(GameObject);
-            GameObject.body.immovable = true;
-            GameObject.body.moves = false;
-        };
 
 
         //設定角色彈跳值
@@ -66,47 +54,25 @@ const gamePlay = {
         //設定角色碰撞邊界
         this.player.setSize(100, 100);
         //設定動畫播放
+        // 動畫影格
+        keyFrame(this);
 
-        //播放動畫
-        this.player.anims.play('run', true);
+        // 加入物理效果(將需要碰撞的物件綁在一起)
+        const addPhysics = GameObject =>{
+            this.physics.add.existing(GameObject);
+            GameObject.body.immovable = true;
+            GameObject.body.moves = false;
+        }
+
+        // 障礙物的座標資訊
+        const masPos = [
+            {name: 'rock1', x: w/2+30 , y: 320, w: 160, h: 83},
+            {name: 'rock2', x: w/2+30 , y: h / 2 - 30 , w: 200, h: 94},
+            {name: 'rock3', x: w/2+30 , y: 70, w: 130, h: 160},
+        ]
         //初始化時間參數
         this.TimeText = this.add.text(w-180,h-50,`Time : ${this.timeInt}`,{color:'#fff',fontSize:'30px'});
 
-
-        // 動畫影格
-
-        //碰撞到後停止遊戲
-        const hittest = () => {
-            this.gameStop = true;
-            this.player.setBounce(0);
-            this.player.setSize(110, 100, 0);
-            this.player.anims.play('deel', true);
-            clearInterval(timer);
-            let gameOver = this.add.image(w / 2, h / 2 - 40, 'gameOver');
-            gameOver.setScale(0.8);
-            let tryAgainBtn = this.add.image(w / 2, h / 2 + 30, 'tryAgainBtn');
-            tryAgainBtn.setScale(0.6);
-            tryAgainBtn.setInteractive();
-            tryAgainBtn.on('pointerdown', () => this.scene.start('gameStart'));
-        }
-
-        //檢查是否碰撞
-        // 產生地板障礙物
-        for (let i = 0; i < 10; i++) {
-            console.log("111");
-            let BoolIdx = getRandom(2, 0);
-            //let BoolIdx2 = getRandom(2, 0);
-            this.rock1= this.add.tileSprite(masPos[BoolIdx].x, masPos[BoolIdx].y, masPos[BoolIdx].w, masPos[BoolIdx].h, masPos[BoolIdx].name);
-            //this['rockB'+ i] = this.add.tileSprite(masPos[BoolIdx2].x, masPos[BoolIdx2].y, masPos[BoolIdx2].w, masPos[BoolIdx2].h, masPos[BoolIdx2].name);
-            this.obstacle1.push(this    .rock1);
-            //this.obstacle2.push(this['rockB'+ i]);
-            //加入物理效果
-            addPhysics(this.rock1);
-            //addPhysics(this['rockB'+i]);
-            //玩家和障礙物綁在一起
-            this.physics.add.collider(this.player, this.rock1, hittest);
-            //this.physics.add.collider(this.player, this['rockB'+i], hittest);
-        }
         //倒數計時
         let timer =setInterval(()=>{
             this.timeInt--;
@@ -124,10 +90,45 @@ const gamePlay = {
                 this.congratulation.setScale((0.5));
             }
         },1000)
+
+        //碰撞到後停止遊戲
+        const hittest = () => {
+            this.gameStop = true;
+            this.player.setBounce(0);
+            this.player.setSize(110, 100, 0);
+            this.player.anims.play('deel', true);
+            clearInterval(timer);
+            let gameOver = this.add.image(w / 2, h / 2 - 40, 'gameOver');
+            gameOver.setScale(0.8);
+            let tryAgainBtn = this.add.image(w / 2, h / 2 + 30, 'tryAgainBtn');
+            tryAgainBtn.setScale(0.6);
+            tryAgainBtn.setInteractive();
+            tryAgainBtn.on('pointerdown', () => this.scene.start('gameStart'));
+        }
+
+        //檢查是否碰撞&產生地板障礙物
+        for (let i = 0; i < 10; i++) {
+            let BoolIdx = getRandom(2, 0);
+            let BoolIdx2 = getRandom(2, 0);
+            this['rock'+ i] = this.add.tileSprite(masPos[BoolIdx].x, masPos[BoolIdx].y, masPos[BoolIdx].w, masPos[BoolIdx].h, masPos[BoolIdx].name);
+            this['rockB'+ i] = this.add.tileSprite(masPos[BoolIdx2].x, masPos[BoolIdx2].y, masPos[BoolIdx2].w, masPos[BoolIdx2].h, masPos[BoolIdx2].name);
+            this.obstacle1.push(this['rock'+ i] );
+            this.obstacle2.push(this['rockB'+ i]);
+            //加入物理效果
+            addPhysics(this['rock'+ i] );
+            addPhysics(this['rockB'+i]);
+            //玩家和障礙物綁在一起
+            this.physics.add.collider(this.player, this['rock'+ i] , hittest);
+            this.physics.add.collider(this.player, this['rockB'+i], hittest);
+        }
+        this.physics.add.collider(this.player, this.footer);//玩家和地板綁在一起
+
+        //播放動畫
+        this.player.anims.play('run', true);
     },
     update: function(){
         //時間歸零後
-        if(this.gameStop) return;
+        //if(this.gameStop) return;
         //定義哪些需要知道碰撞的物件
         // 遊戲狀態更新
         this.bg4.tilePositionX += 4 * this.speedLevel;
