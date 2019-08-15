@@ -1,3 +1,6 @@
+const getRandom = (max, min) =>{
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+};
 const gamePlay = {
     key: 'gamePlay',
     preload: function(){
@@ -7,7 +10,21 @@ const gamePlay = {
         this.load.image('bg3','images/bg/bg3.png');
         this.load.image('bg4','images/bg/bg4.png');
         this.load.image('footer',' images/bg/footer.png');
+        this.load.image('rock1',' images/item-level-1-branch.png');
+        this.load.image('rock2',' images/item-level-1-rock.png');
+        this.load.image('congratulation',' images/ui/txt-congratulations.png');
+        this.load.image('gameOver',' images/ui/txt-game-over.png');
+        this.load.image('tryAgainBtn',' images/ui/btn-try-again.png');
         this.load.spritesheet('user', 'images/player.png', {frameWidth: 144, frameHeight: 120});
+
+        //參數設定
+        this.timeInt = 30;
+        this.speedLevel = 1;
+        this.gameStop = false;
+        this.obstacle1 =[];
+        this.obstacle2 =[];
+        this.obsIdx = 0;  // 障礙物索引
+        this.obsIdx2 = 1;
     },
     create: function(){
         // 資源載入完成，加入遊戲物件及相關設定
@@ -16,6 +33,13 @@ const gamePlay = {
         this.bg2 = this.add.tileSprite(w/2, h/2, w, h, 'bg2');
         this.bg1 = this.add.tileSprite(w/2, h/2, w, h, 'bg1');
         this.footer = this.add.tileSprite(w/2, 360+45, w, 90, 'footer');
+
+        // 怪物的座標資訊
+        const masPos = [
+            {name: 'rock1', x: w + 200, y: 320, w: 160, h: 83},
+            {name: 'rock2', x: w + 200, y: h / 2 - 30 , w: 200, h: 94},
+        ];
+        //把物件加入有物理的世界
         this.physics.add.existing(this.footer);
         // 設定物件不會動靜止不會掉下去
         this.footer.body.immovable = true;
@@ -25,7 +49,16 @@ const gamePlay = {
         this.player = this.physics.add.sprite(150, 150, 'user');
         this.player.setScale(0.7);
         //將需要碰撞的物件綁在一起
-        this.physics.add.collider(this.player, this.footer);
+        this.physics.add.collider(this.player, this.footer);//玩家和地板綁在一起
+
+        const addPhysics = GameObject =>{
+            console.log("123");
+            this.physics.add.existing(GameObject);
+            GameObject.body.immovable = true;
+            GameObject.body.moves = false;
+        };
+
+
         //設定角色彈跳值
         this.player.setBounce(1);
         //設定邊界，不讓他超出邊界
@@ -33,48 +66,95 @@ const gamePlay = {
         //設定角色碰撞邊界
         this.player.setSize(100, 100);
         //設定動畫播放
-        this.anims.create({
-            key: 'run',
-            frames: this.anims.generateFrameNumbers('user', { start: 0, end: 1 }),
-            frameRate: 5,
-            repeat: -1//1==執行一次  -1==無限循環
-        })
-        //加速度
-        this.anims.create({
-            key: 'speed',
-            frames: this.anims.generateFrameNumbers('user', { start: 4, end: 5 }),
-            frameRate: 5,
-            repeat: -1//1==執行一次  -1==無限循環
-        })
+
         //播放動畫
         this.player.anims.play('run', true);
+        //初始化時間參數
+        this.TimeText = this.add.text(w-180,h-50,`Time : ${this.timeInt}`,{color:'#fff',fontSize:'30px'});
+
+
+        // 動畫影格
+
+        //碰撞到後停止遊戲
+        const hittest = () => {
+            this.gameStop = true;
+            this.player.setBounce(0);
+            this.player.setSize(110, 100, 0);
+            this.player.anims.play('deel', true);
+            clearInterval(timer);
+            let gameOver = this.add.image(w / 2, h / 2 - 40, 'gameOver');
+            gameOver.setScale(0.8);
+            let tryAgainBtn = this.add.image(w / 2, h / 2 + 30, 'tryAgainBtn');
+            tryAgainBtn.setScale(0.6);
+            tryAgainBtn.setInteractive();
+            tryAgainBtn.on('pointerdown', () => this.scene.start('gameStart'));
+        }
+
+        //檢查是否碰撞
+        // 產生地板障礙物
+        for (let i = 0; i < 10; i++) {
+            console.log("111");
+            let BoolIdx = getRandom(2, 0);
+            //let BoolIdx2 = getRandom(2, 0);
+            this.rock1= this.add.tileSprite(masPos[BoolIdx].x, masPos[BoolIdx].y, masPos[BoolIdx].w, masPos[BoolIdx].h, masPos[BoolIdx].name);
+            //this['rockB'+ i] = this.add.tileSprite(masPos[BoolIdx2].x, masPos[BoolIdx2].y, masPos[BoolIdx2].w, masPos[BoolIdx2].h, masPos[BoolIdx2].name);
+            this.obstacle1.push(this    .rock1);
+            //this.obstacle2.push(this['rockB'+ i]);
+            //加入物理效果
+            addPhysics(this.rock1);
+            //addPhysics(this['rockB'+i]);
+            //玩家和障礙物綁在一起
+            this.physics.add.collider(this.player, this.rock1, hittest);
+            //this.physics.add.collider(this.player, this['rockB'+i], hittest);
+        }
+        //倒數計時
+        let timer =setInterval(()=>{
+            this.timeInt--;
+            if(this.timeInt < 20 && this.timeInt >10){
+                this.speedLevel = 2;
+            }
+            else if(this.timeInt <10 && this.timeInt >0){
+                this.speedLevel = 4;
+            }
+            this.TimeText.setText(`Time : ${this.timeInt}`);
+            if(this.timeInt <=0){
+                this.gameStop = true;
+                clearInterval(timer);
+                this.congratulation = this.add.image(w/2,h/2-50,'congratulation');
+                this.congratulation.setScale((0.5));
+            }
+        },1000)
     },
     update: function(){
+        //時間歸零後
+        if(this.gameStop) return;
+        //定義哪些需要知道碰撞的物件
         // 遊戲狀態更新
-        this.bg4.tilePositionX += 4;
-        this.bg3.tilePositionX += 3;
-        this.bg2.tilePositionX += 2;
-        this.bg1.tilePositionX += 1;
-        this.footer.tilePositionX += 4;
+        this.bg4.tilePositionX += 4 * this.speedLevel;
+        this.bg3.tilePositionX += 3 * this.speedLevel;
+        this.bg2.tilePositionX += 2 * this.speedLevel;
+        this.bg1.tilePositionX += 1 * this.speedLevel;
+        this.footer.tilePositionX += 4 * this.speedLevel;
+        //this.obstacle[this.obsIdx].x -= 3 * this.speedLevel;
+
         //滑鼠監聽事件
-        const keyboard = this.input.keyboard.createCursorKeys()
+        const keyboard = this.input.keyboard.createCursorKeys();
         if(keyboard.right.isDown){
             this.player.anims.play('speed', true);
-            this.player.flipx = false;//角色翻轉
-            this.player.setVelocityX(200);
+            this.player.flipX = false;//角色翻轉
+            this.player.setVelocityX(250);//每次移動的pixel
         }
         else if(keyboard.left.isDown){
             this.player.anims.play('speed', true);
-            this.player.flipx = true;
+            this.player.flipX = true;
             this.player.setVelocityX(-260);
         }
         else{
             this.player.anims.play('run', true);
-            this.player.flipx = false;
+            this.player.flipX = false;
             this.player.setVelocityX(0);
         }
         if(keyboard.up.isDown){
-            console.log('up');
         }
     }
 }

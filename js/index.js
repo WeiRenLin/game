@@ -9,7 +9,6 @@ const config = {
             gravity: {//重力值
                 y: 700
             },
-            debug:true,
         },
     },
     scene: [gameStart,gamePlay]
